@@ -7,6 +7,7 @@ import requests
 from lxml import html
 import pandas as pd
 import numpy as np
+import os
 
 url = 'http://quote.eastmoney.com/stocklist.html#sh'
 
@@ -34,4 +35,5 @@ for stock in all_stocks:
     df = df.append(dict, ignore_index=True)
     print(stock_code)
 
+os.makedirs('./result', exist_ok=True)
 df.to_csv('./result/all_sh_list.csv')

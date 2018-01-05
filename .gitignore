@@ -10,6 +10,7 @@ __pycache__/
 
 .idea
 test/result
+test/stock_info
 
 # Distribution / packaging
 .Python

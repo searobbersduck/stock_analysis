@@ -10,9 +10,19 @@ import os
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import time
 
 stock_info_root = './stock_info'
 os.makedirs(stock_info_root, exist_ok=True)
+
+def get_proxy():
+    # return requests.get("http://127.0.0.1:5010/get/").content
+    proxy = requests.get("http://127.0.0.1:5010/get/").text
+    proxy = "http://{}".format(proxy)
+    return proxy
+
+def delete_proxy(proxy):
+    requests.get("http://127.0.0.1:5010/delete/?proxy={}".format(proxy))
 
 def extract_columns(row):
     res = row.xpath('td//text()')
@@ -27,14 +37,23 @@ def get_stock_info(stock_code, year, qr):
     info = []
     url = "http://money.finance.sina.com.cn/corp/go.php/vMS_MarketHistory/stockid/%s.phtml?year=%s&jidu=%s" \
           % (stock_code, year, qr)
-    req = requests.get(url=url)
+    # headers似乎是必须设置的，否则会被网站的反爬虫机制限制。
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36',
+    }
+    proxy = get_proxy()
+    print('proxy addr is: {}'.format(proxy))
+    # req = requests.get(url=url, headers=headers, proxies={"http": "http://{}".format(proxy)})
+    # req = requests.get(url=url, proxies={"http": proxy})
+    req = requests.get(url=url, headers=headers)
+    # delete_proxy()
     tree = html.fromstring(req.content.decode('gbk'))
     rows = tree.xpath('//div[@class="tagmain"]/table[@id="FundHoldSharesTable"]/tr')
     try:
         col_names = rows[0]
         columns = extract_columns(col_names)
     except:
-        print('===>exception: {}-{}'.format(year, qr))
+        # print('===>exception: {}-{}'.format(year, qr))
         return None, None
     rows = rows[1:]
     for row in rows:
@@ -53,6 +72,7 @@ def get_stock_all_infos(stock_code, years, qrs):
     for year in years:
         for qr in qrs:
             print('{}-{}'.format(year, qr))
+            time.sleep(2)
             columns, tmp_list = get_stock_info(stock_code, year, qr)
             if columns is None:
                 continue
